@@ -13,6 +13,201 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/AssertDF')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "sourceFinanceTbl"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlValidData",
+								"type": "DatasetReference"
+							},
+							"name": "sinkValidRows"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlErrorUnitsData",
+								"type": "DatasetReference"
+							},
+							"name": "sinkErrorRows"
+						}
+					],
+					"transformations": [
+						{
+							"name": "UnitSoldAssert"
+						},
+						{
+							"name": "SetErrorRowFlags"
+						},
+						{
+							"name": "SplitRows"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> sourceFinanceTbl",
+						"sourceFinanceTbl assert(expectTrue(UnitsSold>=1000, false, 'UnitsSoldAssert', null, \"The unit sold sholud be greater than 999\")) ~> UnitSoldAssert",
+						"UnitSoldAssert derive(IsErrorUnits = isError()) ~> SetErrorRowFlags",
+						"SetErrorRowFlags split(IsErrorUnits==false(),",
+						"     disjoint: false) ~> SplitRows@(ValidRows, ErrorRows)",
+						"SplitRows@ValidRows sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Segment,",
+						"          Country,",
+						"          Product,",
+						"          DiscountBand,",
+						"          UnitsSold",
+						"     )) ~> sinkValidRows",
+						"SplitRows@ErrorRows sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Segment,",
+						"          Country,",
+						"          Product,",
+						"          DiscountBand,",
+						"          UnitsSold",
+						"     )) ~> sinkErrorRows"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Derivedcol')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable2",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"rejectedDataLinkedService": {
+								"referenceName": "AzureBlobStorage1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [
+						{
+							"name": "getCurrentDate"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source1 derive(InsertDate = currentDate()) ~> getCurrentDate",
+						"getCurrentDate sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          FinanceRowNum as integer,",
+						"          Segment as string,",
+						"          County as string,",
+						"          Product as string,",
+						"          UnitSold as integer,",
+						"          InsertDate as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'allErrors',",
+						"     transactionCommit: 'single',",
+						"     reportSuccessOnError: false,",
+						"     outputAssertFailedRows: true,",
+						"     mapColumn(",
+						"          Segment,",
+						"          County = Country,",
+						"          Product,",
+						"          UnitSold = UnitsSold,",
+						"          InsertDate",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/ExistsTransformation')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -1703,7 +1898,8 @@
 				"lastPublishTime": "2025-01-07T04:43:38Z"
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/dataflow2')]"
+				"[concat(variables('factoryId'), '/dataflows/dataflow2')]",
+				"[concat(variables('factoryId'), '/dataflows/AssertDF')]"
 			]
 		},
 		{
@@ -1869,7 +2065,9 @@
 				"annotations": [],
 				"lastPublishTime": "2025-01-07T04:43:39Z"
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Derivedcol')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/CopyFileShareToContainer')]",
@@ -2488,227 +2686,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/ImportSalesFilesToDB')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LookUpTransformation')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "LookUpTrans",
-						"type": "ExecuteDataFlow",
-						"state": "Inactive",
-						"onInactiveMarkAs": "Succeeded",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "LookUpTrans",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ProductSrc": {},
-									"SubCategorySrc": {},
-									"Categorized": {},
-									"UnCategorized": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
-						"name": "ExistsTrans",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "LookUpTrans",
-								"dependencyConditions": [
-									"Completed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "ExistsTransformation",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ProductSrc": {},
-									"PorductSubcategory": {},
-									"ExistsOutput": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": [],
-				"lastPublishTime": "2025-01-07T04:43:39Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/LookUpTrans')]",
-				"[concat(variables('factoryId'), '/dataflows/ExistsTransformation')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ProductSplit')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "ImportDataToDB",
-						"type": "ExecuteDataFlow",
-						"state": "Inactive",
-						"onInactiveMarkAs": "Succeeded",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "ImportProductData",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ProductDataRaw": {},
-									"LoadProductTable": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
-						"name": "GroupProductByColor",
-						"type": "ExecuteDataFlow",
-						"state": "Inactive",
-						"onInactiveMarkAs": "Succeeded",
-						"dependsOn": [
-							{
-								"activity": "ImportDataToDB",
-								"dependencyConditions": [
-									"Completed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "SplitProdData",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ProdSource": {},
-									"ProductBlack": {},
-									"ProductRed": {},
-									"RemainingProduct": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
-						"name": "GenerateProductDetails_Jointrans",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "GroupProductByColor",
-								"dependencyConditions": [
-									"Completed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "JoinTransformation",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"ProductSource": {},
-									"SubcategorySource": {},
-									"ProductCategory": {},
-									"ExcelOutput": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": [],
-				"lastPublishTime": "2025-01-07T04:43:39Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/ImportProductData')]",
-				"[concat(variables('factoryId'), '/dataflows/SplitProdData')]",
-				"[concat(variables('factoryId'), '/dataflows/JoinTransformation')]"
 			]
 		}
 	]
