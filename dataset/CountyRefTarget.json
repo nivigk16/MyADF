@@ -1,0 +1,36 @@
+{
+	"name": "CountyRefTarget",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CountyId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CountyName",
+				"type": "varchar"
+			},
+			{
+				"name": "Fips",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "StateCode",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "County"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

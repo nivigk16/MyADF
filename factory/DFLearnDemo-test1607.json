@@ -1,0 +1,9 @@
+{
+	"name": "DFLearnDemo-test1607",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "f6d7ca50-53ce-4443-ad6d-e93fc6115397",
+		"tenantId": "4a5a057c-c57c-4e55-808c-9e4e26753083"
+	}
+}

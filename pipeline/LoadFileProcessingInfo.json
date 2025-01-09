@@ -1,0 +1,186 @@
+{
+	"name": "LoadFileProcessingInfo",
+	"properties": {
+		"activities": [
+			{
+				"name": "ReadFileInfo",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Json1",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "JsonReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEachFile",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ReadFileInfo').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get Metadata1",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Json1",
+									"type": "DatasetReference"
+								},
+								"fieldList": [
+									{
+										"value": "@item().name",
+										"type": "Expression"
+									}
+								],
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Lookup1",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata1",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "insert into dbo.FileProcessing(ProcessingFilename,ProcessingFileType,FileSourceContainer\n,FileSourceDirectory)SELECT '@{item().name}','@{item().type}','@{pipeline().parameters.ContainerName}','@{pipeline().parameters.FolderName}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "AzureSqlTable1",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter1",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "ReadFileInfo",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ReadFileInfo').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@not(empty(activity('ReadFileInfo').output))",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"FolderName": {
+				"type": "string",
+				"defaultValue": "fslearnadf"
+			},
+			"ContainerName": {
+				"type": "string",
+				"defaultValue": "dllearnadf"
+			}
+		},
+		"variables": {
+			"PipelineRunId": {
+				"type": "String"
+			},
+			"FileName": {
+				"type": "String"
+			},
+			"FileType": {
+				"type": "String"
+			},
+			"FileLastModified": {
+				"type": "String"
+			},
+			"ContainerName": {
+				"type": "String"
+			},
+			"FolderName": {
+				"type": "String"
+			},
+			"ExecutionTime": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-07T04:43:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

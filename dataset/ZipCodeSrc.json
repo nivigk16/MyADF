@@ -1,0 +1,51 @@
+{
+	"name": "ZipCodeSrc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "ZipCode",
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Zipcode.xlsx",
+				"fileSystem": "fslearnadf"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "ZipCodeId",
+				"type": "String"
+			},
+			{
+				"name": "ZipTypeId",
+				"type": "String"
+			},
+			{
+				"name": "PrevalentCounty",
+				"type": "String"
+			},
+			{
+				"name": "Latitude",
+				"type": "String"
+			},
+			{
+				"name": "Longitude",
+				"type": "String"
+			},
+			{
+				"name": "CityName",
+				"type": "String"
+			},
+			{
+				"name": "CityTypeId",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

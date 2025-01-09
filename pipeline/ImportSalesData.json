@@ -1,0 +1,360 @@
+{
+	"name": "ImportSalesData",
+	"properties": {
+		"activities": [
+			{
+				"name": "ImportSalesFile",
+				"type": "ExecuteDataFlow",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "ImportSalesFilesToDB",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"ProductFile": {
+								"FilePath": {
+									"value": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv",
+									"type": "Expression"
+								},
+								"ContainerName": "productdataprocessing"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "SetFileFlag",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "FileType",
+					"value": {
+						"value": "@if(contains(pipeline().parameters.FilePath,'AWDB'),'AWDB',if(contains(pipeline().parameters.FilePath,'AWDW'),'AWDW','Def'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "CheckFilePattern",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "SetFileFlag",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@if(contains(pipeline().parameters.FilePath,'AWDB'),'AWDB',if(contains(pipeline().parameters.FilePath,'AWDW'),'AWDW','Default'))",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "AWDB",
+							"activities": [
+								{
+									"name": "LoadAWDBFiles",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "UpdateDataSourceDB",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ImportSalesFilesToDB",
+											"type": "DataFlowReference",
+											"parameters": {
+												"DataSrc": "'AWDB'"
+											},
+											"datasetParameters": {
+												"ProductFile": {
+													"FilePath": {
+														"value": "@pipeline().parameters.FilePath",
+														"type": "Expression"
+													},
+													"ContainerName": {
+														"value": "@pipeline().parameters.ContainerName",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"compute": {
+											"coreCount": 8,
+											"computeType": "General"
+										},
+										"traceLevel": "Fine"
+									}
+								},
+								{
+									"name": "UpdateDataSourceDB",
+									"type": "Script",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "AzureSqlDatabase1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": {
+													"value": "UPDATE dbo.FileProcessing SET Datasource='@{variables('FileType')}' WHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)",
+													"type": "Expression"
+												}
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								},
+								{
+									"name": "Update IsProcessedDB",
+									"type": "Script",
+									"dependsOn": [
+										{
+											"activity": "LoadAWDBFiles",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "AzureSqlDatabase1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": "UPDATE dbo.FileProcessing SET IsProcessed=1\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)"
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						},
+						{
+							"value": "AWDW",
+							"activities": [
+								{
+									"name": "LoadAWDWFiles",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "UpdateDataSourceDW",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ImportSalesFileToDBDW",
+											"type": "DataFlowReference",
+											"parameters": {
+												"FileSourceType": "'AWDW'"
+											},
+											"datasetParameters": {
+												"ProductFileOutput": {
+													"ContainerName": {
+														"value": "@pipeline().parameters.ContainerName",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.FilePath",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"compute": {
+											"coreCount": 8,
+											"computeType": "General"
+										},
+										"traceLevel": "Fine"
+									}
+								},
+								{
+									"name": "UpdateDataSourceDW",
+									"type": "Script",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "AzureSqlDatabase1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": {
+													"value": "UPDATE dbo.FileProcessing SET Datasource='@{variables('FileType')}'\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)",
+													"type": "Expression"
+												}
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								},
+								{
+									"name": "UpdateIsProcessedDW",
+									"type": "Script",
+									"dependsOn": [
+										{
+											"activity": "LoadAWDWFiles",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "AzureSqlDatabase1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": "UPDATE dbo.FileProcessing SET IsProcessed=1\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)"
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Lookup1",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": "SELECT ''",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "AzureSqlTable1",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"ContainerName": {
+				"type": "string",
+				"defaultValue": "productdataprocessing"
+			},
+			"FilePath": {
+				"type": "string",
+				"defaultValue": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023_AWDW.csv"
+			}
+		},
+		"variables": {
+			"FileProp": {
+				"type": "String"
+			},
+			"FileOut": {
+				"type": "String"
+			},
+			"FileType": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "ProductValidationProcess"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-08T12:23:58Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

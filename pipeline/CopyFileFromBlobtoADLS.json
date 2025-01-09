@@ -1,0 +1,205 @@
+{
+	"name": "CopyFileFromBlobtoADLS",
+	"properties": {
+		"activities": [
+			{
+				"name": "ReadFileList",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "BinaryDataSource_Folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.SourceStorage",
+								"type": "Expression"
+							},
+							"Directory": {
+								"value": "@pipeline().parameters.SourceFolder",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEachFile",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ReadFileList",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ReadFileList').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CopyFileToDest",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "BinaryDataSource_Folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@pipeline().parameters.SourceStorage",
+											"type": "Expression"
+										},
+										"Directory": {
+											"value": "@pipeline().parameters.SourceFolder",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "BinaryDataDestination",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@pipeline().parameters.DestStorage",
+											"type": "Expression"
+										},
+										"Directory": {
+											"value": "@pipeline().parameters.DestFloder",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "NotifySuccess",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "ForEachFile",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": "https://prod-15.northcentralus.logic.azure.com:443/workflows/71af0a54b69d433f90d1bba754f7a129/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=37iH5XGFwZKEZBsCdFfNOGOtzd8mlc3ZucnO8HgjEaw",
+					"connectVia": {
+						"referenceName": "AutoResolveIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "{\n\"pipelinename\":\"@{pipeline().Pipeline}\",\n\"Filepath\": \"@{pipeline().parameters.DestStorage}\",\n\"To\":\"@{variables('ToAddress')}\",\n\"CC\":\"@{variables('CCAddress')}\",\n\"Subject\":\"@{variables('MailSubject')}\",\n\"MailBody\":\"@{variables('MailBody')}\"\n}",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"SourceStorage": {
+				"type": "string",
+				"defaultValue": "az-filecopy-dest"
+			},
+			"SourceFolder": {
+				"type": "string"
+			},
+			"DestStorage": {
+				"type": "string",
+				"defaultValue": "az-blob-test"
+			},
+			"DestFloder": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"ToAddress": {
+				"type": "String",
+				"defaultValue": "nivethaselvaraj97@gmail.com"
+			},
+			"CCAddress": {
+				"type": "String",
+				"defaultValue": "manikanta04578@gmail.com"
+			},
+			"MailBody": {
+				"type": "String",
+				"defaultValue": "The file copy process executed successfully"
+			},
+			"MailSubject": {
+				"type": "String",
+				"defaultValue": "FileCopy PipelineRun Succeeded"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-07T04:43:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

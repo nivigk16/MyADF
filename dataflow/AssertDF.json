@@ -1,0 +1,111 @@
+{
+	"name": "AssertDF",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1",
+						"type": "DatasetReference"
+					},
+					"name": "sourceFinanceTbl"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlValidData",
+						"type": "DatasetReference"
+					},
+					"name": "sinkValidRows"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlErrorUnitsData",
+						"type": "DatasetReference"
+					},
+					"name": "sinkErrorRows"
+				}
+			],
+			"transformations": [
+				{
+					"name": "UnitSoldAssert"
+				},
+				{
+					"name": "SetErrorRowFlags"
+				},
+				{
+					"name": "SplitRows"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Segment as string,",
+				"          Country as string,",
+				"          Product as string,",
+				"          DiscountBand as string,",
+				"          UnitsSold as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> sourceFinanceTbl",
+				"sourceFinanceTbl assert(expectTrue(UnitsSold>=1000, false, 'UnitsSoldAssert', null, \"The unit sold sholud be greater than 999\")) ~> UnitSoldAssert",
+				"UnitSoldAssert derive(IsErrorUnits = isError()) ~> SetErrorRowFlags",
+				"SetErrorRowFlags split(IsErrorUnits==false(),",
+				"     disjoint: false) ~> SplitRows@(ValidRows, ErrorRows)",
+				"SplitRows@ValidRows sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Segment as string,",
+				"          Country as string,",
+				"          Product as string,",
+				"          DiscountBand as string,",
+				"          UnitsSold as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Segment,",
+				"          Country,",
+				"          Product,",
+				"          DiscountBand,",
+				"          UnitsSold",
+				"     )) ~> sinkValidRows",
+				"SplitRows@ErrorRows sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Segment as string,",
+				"          Country as string,",
+				"          Product as string,",
+				"          DiscountBand as string,",
+				"          UnitsSold as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Segment,",
+				"          Country,",
+				"          Product,",
+				"          DiscountBand,",
+				"          UnitsSold",
+				"     )) ~> sinkErrorRows"
+			]
+		}
+	}
+}

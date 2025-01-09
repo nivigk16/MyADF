@@ -1,0 +1,194 @@
+{
+	"name": "ZipAndUnZipFiles",
+	"properties": {
+		"activities": [
+			{
+				"name": "ZipFiles",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ZipFiles",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ZipDest",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "UnZip",
+				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings",
+							"compressionProperties": {
+								"type": "ZipDeflateReadSettings"
+							}
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ZipSource",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ExtractToADLS",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "SendMail",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set variable1",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": "https://prod-19.northcentralus.logic.azure.com:443/workflows/e832ef40b4084c7e8e5a45f0a5dc5834/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=zJ7cwhiLvMPAjsvXq93MkV6Xp7eK4nuBtGXzVszNrPk",
+					"connectVia": {
+						"referenceName": "AutoResolveIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "{\n        \"Pipelinename\":\"@{pipeline().Pipeline}\",\n        \"Conatinername\":\"@{pipeline().parameters.ContainerName}\",\n        \"AttachmentFilepath\": \"@{variables('FilePath')}\",\n        \"ToAddress\": \"@{variables('ToAddress')}\",\n        \"CCAddress\":\"@{variables('CCAddress')}\",\n        \"Mailsubject\":\"@{variables('MailSubject')}\"\n}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ZipFiles",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "FilePath",
+					"value": {
+						"value": "@concat('/',pipeline().parameters.ContainerName,'/',pipeline().parameters.ZipFileName)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"ContainerName": {
+				"type": "string",
+				"defaultValue": "az-blob-test"
+			},
+			"FilePath": {
+				"type": "string",
+				"defaultValue": "/az-blob-test/CompressedFile.zip"
+			},
+			"ZipFileName": {
+				"type": "string",
+				"defaultValue": "CompressedFile.zip"
+			},
+			"StorageAcc": {
+				"type": "string",
+				"defaultValue": "learnadfdemo"
+			}
+		},
+		"variables": {
+			"ToAddress": {
+				"type": "String",
+				"defaultValue": "naveenmech047@outlook.com"
+			},
+			"CCAddress": {
+				"type": "String",
+				"defaultValue": "selvarajnivetha97@outlook.com"
+			},
+			"MailSubject": {
+				"type": "String",
+				"defaultValue": "File Copied successfully"
+			},
+			"FilePath": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-07T04:43:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

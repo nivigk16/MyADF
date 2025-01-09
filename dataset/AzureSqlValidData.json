@@ -1,0 +1,38 @@
+{
+	"name": "AzureSqlValidData",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Segment",
+				"type": "varchar"
+			},
+			{
+				"name": "Country",
+				"type": "varchar"
+			},
+			{
+				"name": "Product",
+				"type": "varchar"
+			},
+			{
+				"name": "DiscountBand",
+				"type": "varchar"
+			},
+			{
+				"name": "UnitsSold",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "FinanceValidUnits"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

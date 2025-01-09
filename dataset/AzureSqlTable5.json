@@ -1,0 +1,56 @@
+{
+	"name": "AzureSqlTable5",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "FileProcessingId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ProcessingFilename",
+				"type": "varchar"
+			},
+			{
+				"name": "ProcessingFileType",
+				"type": "varchar"
+			},
+			{
+				"name": "ProcessingFileSize",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "FileSourceContainer",
+				"type": "varchar"
+			},
+			{
+				"name": "FileSourceDirectory",
+				"type": "varchar"
+			},
+			{
+				"name": "FileLastModifieddate",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "RecordInsertdatetime",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "FileProcessing"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

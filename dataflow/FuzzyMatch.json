@@ -1,0 +1,224 @@
+{
+	"name": "FuzzyMatch",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "UncleanedFuzzySrc",
+						"type": "DatasetReference"
+					},
+					"name": "CountyUSZipsUnClean"
+				},
+				{
+					"dataset": {
+						"referenceName": "CountyRef",
+						"type": "DatasetReference"
+					},
+					"name": "CountySource"
+				},
+				{
+					"dataset": {
+						"referenceName": "StateRef",
+						"type": "DatasetReference"
+					},
+					"name": "Statesource"
+				},
+				{
+					"dataset": {
+						"referenceName": "ZipCodeSrc",
+						"type": "DatasetReference"
+					},
+					"name": "ZipCodeSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "CountyDataRaw",
+						"type": "DatasetReference"
+					},
+					"name": "LoadCountyDataRaw"
+				},
+				{
+					"dataset": {
+						"referenceName": "CountyRefTarget",
+						"type": "DatasetReference"
+					},
+					"name": "CountyRef"
+				},
+				{
+					"dataset": {
+						"referenceName": "StateRefTarget",
+						"type": "DatasetReference"
+					},
+					"name": "StateRef"
+				},
+				{
+					"dataset": {
+						"referenceName": "ZipCodeReftarget",
+						"type": "DatasetReference"
+					},
+					"name": "ZipcodeRef"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          zip as integer,",
+				"          lat as float,",
+				"          lng as float,",
+				"          city as string,",
+				"          state_id as string,",
+				"          state_name as string,",
+				"          population as integer,",
+				"          density as float,",
+				"          county_fips as integer,",
+				"          county_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> CountyUSZipsUnClean",
+				"source(output(",
+				"          CountyId as string,",
+				"          Name as string,",
+				"          Fips as string,",
+				"          StateId as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> CountySource",
+				"source(output(",
+				"          StateId as string,",
+				"          Name as string,",
+				"          Fips as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Statesource",
+				"source(output(",
+				"          ZipCodeId as integer,",
+				"          ZipTypeId as string,",
+				"          PrevalentCounty as integer,",
+				"          Latitude as float,",
+				"          Longitude as float,",
+				"          CityName as string,",
+				"          CityTypeId as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> ZipCodeSource",
+				"CountyUSZipsUnClean sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Zip as integer,",
+				"          Lat as double,",
+				"          Lgn as double,",
+				"          City as string,",
+				"          Statecode as string,",
+				"          Statename as string,",
+				"          population as long,",
+				"          density as double,",
+				"          county_fips as integer,",
+				"          county_name as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Zip = zip,",
+				"          Lat = lat,",
+				"          Lgn = lng,",
+				"          City = city,",
+				"          Statecode = state_id,",
+				"          Statename = state_name,",
+				"          population,",
+				"          density,",
+				"          county_fips,",
+				"          county_name",
+				"     )) ~> LoadCountyDataRaw",
+				"CountySource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CountyId as integer,",
+				"          CountyName as string,",
+				"          Fips as integer,",
+				"          StateCode as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CountyId,",
+				"          CountyName = Name,",
+				"          Fips,",
+				"          StateCode = StateId",
+				"     )) ~> CountyRef",
+				"Statesource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          StateId as integer,",
+				"          StateCode as string,",
+				"          StateName as string,",
+				"          Fips as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          StateCode = StateId,",
+				"          StateName = Name,",
+				"          Fips",
+				"     )) ~> StateRef",
+				"ZipCodeSource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ZipCodeId as integer,",
+				"          ZipTypeId as string,",
+				"          PrevalentCounty as integer,",
+				"          Latitude as double,",
+				"          Longitude as double,",
+				"          CityName as string,",
+				"          CityTypeId as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          ZipCodeId,",
+				"          ZipTypeId,",
+				"          PrevalentCounty,",
+				"          Latitude,",
+				"          Longitude,",
+				"          CityName,",
+				"          CityTypeId",
+				"     )) ~> ZipcodeRef"
+			]
+		}
+	}
+}

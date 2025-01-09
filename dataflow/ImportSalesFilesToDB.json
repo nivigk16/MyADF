@@ -1,0 +1,95 @@
+{
+	"name": "ImportSalesFilesToDB",
+	"properties": {
+		"folder": {
+			"name": "ProductValidationProcess"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ProductFileSrc",
+						"type": "DatasetReference"
+					},
+					"name": "ProductFile"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SalesorderData",
+						"type": "DatasetReference"
+					},
+					"name": "SalesOrderTarget"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AlterRow1"
+				},
+				{
+					"name": "DeriveDatasource"
+				}
+			],
+			"scriptLines": [
+				"parameters{",
+				"     DataSrc as string",
+				"}",
+				"source(output(",
+				"          SalesOrderID as integer,",
+				"          SalesOrderDetailID as integer,",
+				"          CarrierTrackingNumber as string,",
+				"          OrderQty as integer,",
+				"          ProductID as integer,",
+				"          SpecialOfferID as integer,",
+				"          UnitPrice as float,",
+				"          UnitPriceDiscount as float",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> ProductFile",
+				"ProductFile alterRow(upsertIf(SalesOrderDetailID==SalesOrderDetailID)) ~> AlterRow1",
+				"AlterRow1 derive(DataSource = $DataSrc) ~> DeriveDatasource",
+				"DeriveDatasource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          SalesOrderID as integer,",
+				"          SalesOrderDetailID as integer,",
+				"          CarrierTrackingNumber as string,",
+				"          OrderQty as integer,",
+				"          ProductID as integer,",
+				"          ProductCategoryId as integer,",
+				"          SpecialOfferID as integer,",
+				"          UnitPrice as decimal(19,4),",
+				"          UnitPriceDiscount as decimal(19,4),",
+				"          LineTotal as decimal(38,6),",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp,",
+				"          DataSource as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['SalesOrderDetailID'],",
+				"     format: 'table',",
+				"     preSQLs:['SET IDENTITY_INSERT [Sales].[SalesOrderDetail] ON;'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          SalesOrderID,",
+				"          SalesOrderDetailID,",
+				"          CarrierTrackingNumber,",
+				"          OrderQty,",
+				"          ProductID,",
+				"          SpecialOfferID,",
+				"          UnitPrice,",
+				"          UnitPriceDiscount,",
+				"          DataSource",
+				"     )) ~> SalesOrderTarget"
+			]
+		}
+	}
+}
