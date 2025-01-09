@@ -1,0 +1,60 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "DFLearnDemo-test1607"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
+		"AzureBlobStorageItr_connectionString": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase2_password": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://dllearnadf.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "learn-adf.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "Customer"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "admin-demo"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_server": {
+			"value": "learn-adf.database.windows.net"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_database": {
+			"value": "Customer"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_userName": {
+			"value": "admin-demo"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount": {
+			"value": "learnadfdemo"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_Container": {
+			"value": "productdataprocessing"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder": {
+			"value": "ProcessingFiles/UnzippedFiles"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

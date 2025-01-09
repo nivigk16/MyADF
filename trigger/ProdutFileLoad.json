@@ -1,0 +1,29 @@
+{
+	"name": "ProdutFileLoad",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "UnZipOrderFiles",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"StorageAccount": "learnadfdemo",
+					"Container": "productdataprocessing",
+					"UnZipFolder": "ProcessingFiles/UnzippedFiles"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 24,
+				"startTime": "2025-01-09T06:01:00",
+				"timeZone": "India Standard Time"
+			}
+		}
+	}
+}
