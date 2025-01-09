@@ -1,0 +1,35 @@
+{
+	"name": "StateRef",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "State",
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Zipcode.xlsx",
+				"fileSystem": "fslearnadf"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "StateId",
+				"type": "String"
+			},
+			{
+				"name": "Name",
+				"type": "String"
+			},
+			{
+				"name": "Fips",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,73 @@
+{
+	"name": "ProductFileSrc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FilePath": {
+				"type": "String",
+				"defaultValue": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv"
+			},
+			"ContainerName": {
+				"type": "string",
+				"defaultValue": "productdataprocessing"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().FilePath",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "@dataset().ContainerName",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "SalesOrderID",
+				"type": "String"
+			},
+			{
+				"name": "SalesOrderDetailID",
+				"type": "String"
+			},
+			{
+				"name": "CarrierTrackingNumber",
+				"type": "String"
+			},
+			{
+				"name": "OrderQty",
+				"type": "String"
+			},
+			{
+				"name": "ProductID",
+				"type": "String"
+			},
+			{
+				"name": "SpecialOfferID",
+				"type": "String"
+			},
+			{
+				"name": "UnitPrice",
+				"type": "String"
+			},
+			{
+				"name": "UnitPriceDiscount",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

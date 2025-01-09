@@ -1,0 +1,219 @@
+{
+	"name": "UnZipOrderFiles_copy1",
+	"properties": {
+		"activities": [
+			{
+				"name": "UnZipInputFiles",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"deleteFilesAfterCompletion": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings",
+							"compressionProperties": {
+								"type": "ZipDeflateReadSettings",
+								"preserveZipFileNameAsFolder": false
+							}
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ZipSource_ProductSales",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "UnZippedFolder",
+						"type": "DatasetReference",
+						"parameters": {
+							"UnzipFolderName": {
+								"value": "@pipeline().parameters.UnZipFolder",
+								"type": "Expression"
+							},
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "ReadInputfileFolder",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "UnZipInputFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "UnZippedFolder",
+						"type": "DatasetReference",
+						"parameters": {
+							"UnzipFolderName": {
+								"value": "@pipeline().parameters.UnZipFolder",
+								"type": "Expression"
+							},
+							"Container": {
+								"value": "@pipeline().parameters.Container",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEachInputFile",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ReadInputfileFolder",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ReadInputfileFolder').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Execute ImportSalesData",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "ImportSalesData",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"ContainerName": {
+										"value": "@pipeline().parameters.Container",
+										"type": "Expression"
+									},
+									"FilePath": {
+										"value": "@concat(pipeline().parameters.UnZipFolder,concat('/',item().name))",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "UpdateSubCategory",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "ForEachInputFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "UPDATE S SET S.ProductCategoryId=PS.ProductCategoryId\nFROM [Sales].[SalesOrderDetail] S \nLEFT JOIN [Production].[Product] P ON S.productid=p.productid\nLEFT JOIN [Production].[ProductSubcategory] ps ON P.ProductSubCategoryId=PS.ProductSubCategoryId"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"StorageAccount": {
+				"type": "string",
+				"defaultValue": "learnadfdemo"
+			},
+			"Container": {
+				"type": "string",
+				"defaultValue": "productdataprocessing"
+			},
+			"UnZipFolder": {
+				"type": "string",
+				"defaultValue": "ProcessingFiles/UnzippedFiles"
+			}
+		},
+		"variables": {
+			"RawFileFolderPath": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "ProductValidationProcess"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-08T05:15:05Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

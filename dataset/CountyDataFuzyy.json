@@ -1,0 +1,68 @@
+{
+	"name": "CountyDataFuzyy",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Zip",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Lat",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "Lgn",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "City",
+				"type": "varchar"
+			},
+			{
+				"name": "Statecode",
+				"type": "varchar"
+			},
+			{
+				"name": "Statename",
+				"type": "varchar"
+			},
+			{
+				"name": "population",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "density",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "county_fips",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "county_name",
+				"type": "varchar"
+			},
+			{
+				"name": "CountyNameUpdated",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CountyDataFuzyy"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

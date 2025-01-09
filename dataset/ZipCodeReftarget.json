@@ -1,0 +1,50 @@
+{
+	"name": "ZipCodeReftarget",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ZipCodeId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ZipTypeId",
+				"type": "char"
+			},
+			{
+				"name": "PrevalentCounty",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Latitude",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "Longitude",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "CityName",
+				"type": "varchar"
+			},
+			{
+				"name": "CityTypeId",
+				"type": "char"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "ZipCode"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

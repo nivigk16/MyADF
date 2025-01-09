@@ -1,0 +1,18 @@
+{
+	"name": "ItrBinaryDataFiles",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorageItr",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "fslearnadf"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

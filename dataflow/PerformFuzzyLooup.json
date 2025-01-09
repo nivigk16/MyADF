@@ -1,0 +1,128 @@
+{
+	"name": "PerformFuzzyLooup",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CountyDataRaw",
+						"type": "DatasetReference"
+					},
+					"name": "CountyDataRaw"
+				},
+				{
+					"dataset": {
+						"referenceName": "CountyRefTarget",
+						"type": "DatasetReference"
+					},
+					"name": "CountyLookUp"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "CountyDataFuzyy",
+						"type": "DatasetReference"
+					},
+					"name": "FuzzyCountyData"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FuzzyMatch"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Zip as integer,",
+				"          Lat as double,",
+				"          Lgn as double,",
+				"          City as string,",
+				"          Statecode as string,",
+				"          Statename as string,",
+				"          population as long,",
+				"          density as double,",
+				"          county_fips as integer,",
+				"          county_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> CountyDataRaw",
+				"source(output(",
+				"          CountyId as integer,",
+				"          CountyName as string,",
+				"          Fips as integer,",
+				"          StateCode as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> CountyLookUp",
+				"CountyDataRaw, CountyLookUp join(fuzzyCompare(county_name, CountyName, 80.00),",
+				"     joinType:'inner',",
+				"     matchType:'fuzzy',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'off')~> FuzzyMatch",
+				"FuzzyMatch select(mapColumn(",
+				"          Zip,",
+				"          Lat,",
+				"          Lgn,",
+				"          City,",
+				"          Statecode = CountyDataRaw@Statecode,",
+				"          Statename,",
+				"          population,",
+				"          density,",
+				"          county_fips,",
+				"          county_name,",
+				"          CountyId,",
+				"          CountyName,",
+				"          Fips",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Zip as integer,",
+				"          Lat as double,",
+				"          Lgn as double,",
+				"          City as string,",
+				"          Statecode as string,",
+				"          Statename as string,",
+				"          population as long,",
+				"          density as double,",
+				"          county_fips as integer,",
+				"          county_name as string,",
+				"          CountyNameUpdated as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Zip,",
+				"          Lat,",
+				"          Lgn,",
+				"          City,",
+				"          Statecode,",
+				"          Statename,",
+				"          population,",
+				"          density,",
+				"          county_fips,",
+				"          county_name,",
+				"          CountyNameUpdated = CountyName",
+				"     )) ~> FuzzyCountyData"
+			]
+		}
+	}
+}

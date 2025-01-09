@@ -1,0 +1,147 @@
+{
+	"name": "GetProductDetails",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetProductDetails",
+				"type": "SqlServerStoredProcedure",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_findproductdetails]",
+					"storedProcedureParameters": {
+						"ProductCategory": {
+							"value": {
+								"value": "@pipeline().parameters.catname",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"productid": {
+							"value": {
+								"value": "@pipeline().parameters.ProductId",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"productidOut": {
+							"value": {
+								"value": "@pipeline().parameters.Outprodid",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"ProductSubCategory": {
+							"value": {
+								"value": "@pipeline().parameters.subcatname",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Lookup1",
+				"type": "Lookup",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[usp_findproductdetails]",
+						"storedProcedureParameters": {
+							"ProductCategory": {
+								"type": "String",
+								"value": null
+							},
+							"productid": {
+								"type": "Int32",
+								"value": "210"
+							},
+							"productidOut": {
+								"type": "Int32",
+								"value": null
+							},
+							"ProductSubCategory": {
+								"type": "String",
+								"value": null
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"isolationLevel": "ReadUncommitted",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DSFromSP",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Lookup2",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "EXEC dbo.usp_findproductdetails 210,@productidOut,@ProductSubCategory,@ProductCategory OUTPUT",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DSFromSP",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"ProductId": {
+				"type": "int"
+			},
+			"Outprodid": {
+				"type": "int"
+			},
+			"catname": {
+				"type": "string"
+			},
+			"subcatname": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-07T04:43:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

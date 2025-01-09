@@ -1,0 +1,73 @@
+{
+	"name": "ProductFileAWDW",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"ContainerName": {
+				"type": "string",
+				"defaultValue": "productdataprocessing"
+			},
+			"FilePath": {
+				"type": "string",
+				"defaultValue": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().FilePath",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "@dataset().ContainerName",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "DW_SalesOrderID",
+				"type": "String"
+			},
+			{
+				"name": "DW_SalesOrderDetailID",
+				"type": "String"
+			},
+			{
+				"name": "DW_CarrierTrackingNumber",
+				"type": "String"
+			},
+			{
+				"name": "DW_OrderQty",
+				"type": "String"
+			},
+			{
+				"name": "DW_ProductID",
+				"type": "String"
+			},
+			{
+				"name": "DW_SpecialOfferID",
+				"type": "String"
+			},
+			{
+				"name": "DW_UnitPrice",
+				"type": "String"
+			},
+			{
+				"name": "DW_UnitPriceDiscount",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

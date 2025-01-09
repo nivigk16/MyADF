@@ -1,0 +1,198 @@
+{
+	"name": "JoinTransformation",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CategorizedProduct",
+						"type": "DatasetReference"
+					},
+					"name": "ProductSource"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductSubCategory",
+						"type": "DatasetReference"
+					},
+					"name": "SubcategorySource"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductCategory",
+						"type": "DatasetReference"
+					},
+					"name": "ProductCategory"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ProductWithSubcategoryInfo",
+						"type": "DatasetReference"
+					},
+					"name": "ExcelOutput"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SubcategoryJoin"
+				},
+				{
+					"name": "CategoryDataperProduct"
+				},
+				{
+					"name": "CategoryJoin"
+				},
+				{
+					"name": "SelectFinalColumns"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ProductID as integer,",
+				"          Name as string,",
+				"          ProductNumber as string,",
+				"          MakeFlag as boolean,",
+				"          FinishedGoodsFlag as boolean,",
+				"          Color as string,",
+				"          SafetyStockLevel as integer,",
+				"          ReorderPoint as integer,",
+				"          StandardCost as decimal(19,4),",
+				"          ListPrice as decimal(19,4),",
+				"          Size as string,",
+				"          SizeUnitMeasureCode as string,",
+				"          WeightUnitMeasureCode as string,",
+				"          Weight as decimal(8,2),",
+				"          DaysToManufacture as integer,",
+				"          ProductLine as string,",
+				"          Class as string,",
+				"          Style as string,",
+				"          ProductSubcategoryID as integer,",
+				"          ProductModelID as integer,",
+				"          SellStartDate as timestamp,",
+				"          SellEndDate as timestamp,",
+				"          DiscontinuedDate as timestamp,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductSource",
+				"source(output(",
+				"          ProductSubcategoryID as integer,",
+				"          ProductCategoryID as integer,",
+				"          Name as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> SubcategorySource",
+				"source(output(",
+				"          CategoryId as integer,",
+				"          CategoryName as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductCategory",
+				"ProductSource, SubcategorySource join(ProductSource@ProductSubcategoryID == SubcategorySource@ProductSubcategoryID,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> SubcategoryJoin",
+				"SubcategoryJoin select(mapColumn(",
+				"          ProductID,",
+				"          ProductName = ProductSource@Name,",
+				"          ProductNumber,",
+				"          MakeFlag,",
+				"          FinishedGoodsFlag,",
+				"          Color,",
+				"          SafetyStockLevel,",
+				"          ReorderPoint,",
+				"          StandardCost,",
+				"          ListPrice,",
+				"          Size,",
+				"          SizeUnitMeasureCode,",
+				"          WeightUnitMeasureCode,",
+				"          Weight,",
+				"          DaysToManufacture,",
+				"          ProductLine,",
+				"          Class,",
+				"          Style,",
+				"          ProductSubcategoryID = ProductSource@ProductSubcategoryID,",
+				"          ProductModelID,",
+				"          SellStartDate,",
+				"          SellEndDate,",
+				"          DiscontinuedDate,",
+				"          rowguid = ProductSource@rowguid,",
+				"          ModifiedDate = ProductSource@ModifiedDate,",
+				"          ProductSubcategoryID = SubcategorySource@ProductSubcategoryID,",
+				"          ProductCategoryID,",
+				"          PorductSubcategoryName = SubcategorySource@Name,",
+				"          rowguid = SubcategorySource@rowguid,",
+				"          ModifiedDate = SubcategorySource@ModifiedDate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> CategoryDataperProduct",
+				"CategoryDataperProduct, ProductCategory join(ProductCategoryID == CategoryId,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> CategoryJoin",
+				"CategoryJoin select(mapColumn(",
+				"          ProductID,",
+				"          ProductName,",
+				"          ProductNumber,",
+				"          MakeFlag,",
+				"          FinishedGoodsFlag,",
+				"          Color,",
+				"          ProductSubcategoryID,",
+				"          ProductModelID,",
+				"          ProductCategoryID,",
+				"          ProductSubcategoryName = PorductSubcategoryName,",
+				"          CategoryName",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectFinalColumns",
+				"SelectFinalColumns sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ProductID as string,",
+				"          Name as string,",
+				"          ProductNumber as string,",
+				"          MakeFlag as string,",
+				"          FinishedGoodsFlag as string,",
+				"          Color as string,",
+				"          SafetyStockLevel as string,",
+				"          ReorderPoint as string,",
+				"          StandardCost as string,",
+				"          ListPrice as string,",
+				"          Size as string,",
+				"          SizeUnitMeasureCode as string,",
+				"          WeightUnitMeasureCode as string,",
+				"          Weight as string,",
+				"          DaysToManufacture as string,",
+				"          ProductLine as string,",
+				"          Class as string,",
+				"          Style as string,",
+				"          ProductSubcategoryID as string,",
+				"          ProductModelID as string,",
+				"          SellStartDate as string,",
+				"          SellEndDate as string,",
+				"          DiscontinuedDate as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as string",
+				"     ),",
+				"     partitionFileNames:['ProductDetails.csv'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> ExcelOutput"
+			]
+		}
+	}
+}
