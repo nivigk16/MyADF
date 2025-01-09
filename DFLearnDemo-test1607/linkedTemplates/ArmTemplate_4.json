@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "DFLearnDemo-test1607"
 		},
+		"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+			"type": "string",
+			"defaultValue": "adfconatiner"
+		},
 		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount": {
 			"type": "string",
 			"defaultValue": "learnadfdemo"
@@ -247,6 +251,37 @@
 				},
 				"annotations": [],
 				"lastPublishTime": "2025-01-07T04:43:39Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TW_SendMail')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipeline": {
+					"pipelineReference": {
+						"referenceName": "ZipAndUnZipFiles",
+						"type": "PipelineReference"
+					},
+					"parameters": {
+						"ContainerName": "[parameters('TW_SendMail_properties_pipeline_parameters_ContainerName')]"
+					}
+				},
+				"type": "TumblingWindowTrigger",
+				"typeProperties": {
+					"frequency": "Minute",
+					"interval": 15,
+					"startTime": "2025-01-09T10:20:00Z",
+					"delay": "00:00:00",
+					"maxConcurrency": 50,
+					"retryPolicy": {
+						"intervalInSeconds": 30
+					},
+					"dependsOn": []
+				}
 			},
 			"dependsOn": []
 		},
@@ -798,6 +833,41 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/TumblingWT')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipeline": {
+					"pipelineReference": {
+						"referenceName": "UnZipOrderFiles",
+						"type": "PipelineReference"
+					},
+					"parameters": {
+						"StorageAccount": "[parameters('TumblingWT_properties_pipeline_parameters_StorageAccount')]",
+						"Container": "[parameters('TumblingWT_properties_pipeline_parameters_Container')]",
+						"UnZipFolder": "[parameters('TumblingWT_properties_pipeline_parameters_UnZipFolder')]"
+					}
+				},
+				"type": "TumblingWindowTrigger",
+				"typeProperties": {
+					"frequency": "Minute",
+					"interval": 15,
+					"startTime": "2025-01-09T09:10:00Z",
+					"delay": "00:02:00",
+					"maxConcurrency": 50,
+					"retryPolicy": {
+						"intervalInSeconds": 30
+					},
+					"dependsOn": []
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/UnZipOrderFiles')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/trigger1')]",
 			"type": "Microsoft.DataFactory/factories/triggers",
 			"apiVersion": "2018-06-01",
@@ -826,51 +896,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/UnZipOrderFiles')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/TumblingWT')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Started",
-				"pipeline": {
-					"pipelineReference": {
-						"referenceName": "UnZipOrderFiles",
-						"type": "PipelineReference"
-					},
-					"parameters": {
-						"StorageAccount": "[parameters('TumblingWT_properties_pipeline_parameters_StorageAccount')]",
-						"Container": "[parameters('TumblingWT_properties_pipeline_parameters_Container')]",
-						"UnZipFolder": "[parameters('TumblingWT_properties_pipeline_parameters_UnZipFolder')]"
-					}
-				},
-				"type": "TumblingWindowTrigger",
-				"typeProperties": {
-					"frequency": "Minute",
-					"interval": 15,
-					"startTime": "2025-01-09T09:10:00Z",
-					"delay": "00:02:00",
-					"maxConcurrency": 50,
-					"retryPolicy": {
-						"intervalInSeconds": 30
-					},
-					"dependsOn": [
-						{
-							"type": "TumblingWindowTriggerDependencyReference",
-							"offset": "0.00:14:00",
-							"referenceTrigger": {
-								"referenceName": "trigger1",
-								"type": "TriggerReference"
-							}
-						}
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/UnZipOrderFiles')]",
-				"[concat(variables('factoryId'), '/triggers/trigger1')]"
 			]
 		}
 	]

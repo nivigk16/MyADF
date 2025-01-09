@@ -67,6 +67,10 @@
 			"type": "string",
 			"defaultValue": "ProcessingFiles/UnzippedFiles"
 		},
+		"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+			"type": "string",
+			"defaultValue": "adfconatiner"
+		},
 		"TumblingWT_properties_pipeline_parameters_StorageAccount": {
 			"type": "string",
 			"defaultValue": "learnadfdemo"
@@ -219,6 +223,9 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
+					},
+					"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+						"value": "[parameters('TW_SendMail_properties_pipeline_parameters_ContainerName')]"
 					},
 					"ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount": {
 						"value": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount')]"
