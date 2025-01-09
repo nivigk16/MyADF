@@ -2,7 +2,7 @@
 	"name": "TW_SendMail",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Started",
+		"runtimeState": "Stopped",
 		"pipeline": {
 			"pipelineReference": {
 				"referenceName": "ZipAndUnZipFiles",
