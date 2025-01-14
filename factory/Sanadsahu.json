@@ -1,0 +1,9 @@
+{
+	"name": "Sanadsahu",
+	"location": "southindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "9d1f8c60-0baf-4a32-bfbc-678b67c35cb8",
+		"tenantId": "f8bf855d-3219-49b9-abf4-24075fb5e0c8"
+	}
+}
