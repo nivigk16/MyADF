@@ -14,10 +14,12 @@
 		"type": "BlobEventsTrigger",
 		"typeProperties": {
 			"blobPathBeginsWith": "/az-blob-test/blobs/",
+			"blobPathEndsWith": ".sql",
 			"ignoreEmptyBlobs": true,
 			"scope": "/subscriptions/483014fa-366a-4a45-b00c-7117898b955c/resourceGroups/Tiger/providers/Microsoft.Storage/storageAccounts/adfdemostoragesanad",
 			"events": [
-				"Microsoft.Storage.BlobCreated"
+				"Microsoft.Storage.BlobCreated",
+				"Microsoft.Storage.BlobDeleted"
 			]
 		}
 	}
