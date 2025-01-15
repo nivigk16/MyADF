@@ -1,0 +1,575 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "Sanadsahu"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount": {
+			"type": "string",
+			"defaultValue": "learnadfdemo"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_Container": {
+			"type": "string",
+			"defaultValue": "productdataprocessing"
+		},
+		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder": {
+			"type": "string",
+			"defaultValue": "ProcessingFiles/UnzippedFiles"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/UnZipOrderFiles')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "UnZipInputFiles",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"deleteFilesAfterCompletion": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings",
+									"compressionProperties": {
+										"type": "ZipDeflateReadSettings",
+										"preserveZipFileNameAsFolder": false
+									}
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ZipSource_ProductSales",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "UnZippedFolder",
+								"type": "DatasetReference",
+								"parameters": {
+									"UnzipFolderName": {
+										"value": "@pipeline().parameters.UnZipFolder",
+										"type": "Expression"
+									},
+									"Container": {
+										"value": "@pipeline().parameters.Container",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "ReadInputfileFolder",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "UnZipInputFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "UnZippedFolder",
+								"type": "DatasetReference",
+								"parameters": {
+									"UnzipFolderName": {
+										"value": "@pipeline().parameters.UnZipFolder",
+										"type": "Expression"
+									},
+									"Container": {
+										"value": "@pipeline().parameters.Container",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEachInputFile",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "ReadInputfileFolder",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('ReadInputfileFolder').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Execute ImportSalesData",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "InsertFileInfo",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "ImportSalesData",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"ContainerName": {
+												"value": "@pipeline().parameters.Container",
+												"type": "Expression"
+											},
+											"FilePath": {
+												"value": "@concat(pipeline().parameters.UnZipFolder,concat('/',item().name))",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "GetFileExtension",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "FileExt",
+										"value": {
+											"value": "@{split(item().name,'.')[1]}",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "InsertFileInfo",
+									"type": "Script",
+									"dependsOn": [
+										{
+											"activity": "GetFileExtension",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "AzureSqlDatabase1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": {
+													"value": "INSERT INTO dbo.FileProcessing (ProcessingFilename,ProcessingFileType,ProcessingFileSize,FileSourceContainer,FileSourceDirectory)SELECT '@{item().name}','@{variables('FileExt')}',NULL,'@{pipeline().parameters.Container}','@{pipeline().parameters.UnZipFolder}'",
+													"type": "Expression"
+												}
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "UpdateSubCategory",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "ForEachInputFile",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "UPDATE S SET S.ProductCategoryId=PS.ProductCategoryId\nFROM [Sales].[SalesOrderDetail] S \nLEFT JOIN [Production].[Product] P ON S.productid=p.productid\nLEFT JOIN [Production].[ProductSubcategory] ps ON P.ProductSubCategoryId=PS.ProductSubCategoryId"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"StorageAccount": {
+						"type": "string",
+						"defaultValue": "learnadfdemo"
+					},
+					"Container": {
+						"type": "string",
+						"defaultValue": "productdataprocessing"
+					},
+					"UnZipFolder": {
+						"type": "string",
+						"defaultValue": "ProcessingFiles/UnzippedFiles"
+					}
+				},
+				"variables": {
+					"RawFileFolderPath": {
+						"type": "String"
+					},
+					"FileExt": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-08T11:01:13Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/UnZipOrderFiles_copy1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "UnZipInputFiles",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"deleteFilesAfterCompletion": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings",
+									"compressionProperties": {
+										"type": "ZipDeflateReadSettings",
+										"preserveZipFileNameAsFolder": false
+									}
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ZipSource_ProductSales",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "UnZippedFolder",
+								"type": "DatasetReference",
+								"parameters": {
+									"UnzipFolderName": {
+										"value": "@pipeline().parameters.UnZipFolder",
+										"type": "Expression"
+									},
+									"Container": {
+										"value": "@pipeline().parameters.Container",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "ReadInputfileFolder",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "UnZipInputFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "UnZippedFolder",
+								"type": "DatasetReference",
+								"parameters": {
+									"UnzipFolderName": {
+										"value": "@pipeline().parameters.UnZipFolder",
+										"type": "Expression"
+									},
+									"Container": {
+										"value": "@pipeline().parameters.Container",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEachInputFile",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "ReadInputfileFolder",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('ReadInputfileFolder').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Execute ImportSalesData",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "ImportSalesData",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"ContainerName": {
+												"value": "@pipeline().parameters.Container",
+												"type": "Expression"
+											},
+											"FilePath": {
+												"value": "@concat(pipeline().parameters.UnZipFolder,concat('/',item().name))",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "UpdateSubCategory",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "ForEachInputFile",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "UPDATE S SET S.ProductCategoryId=PS.ProductCategoryId\nFROM [Sales].[SalesOrderDetail] S \nLEFT JOIN [Production].[Product] P ON S.productid=p.productid\nLEFT JOIN [Production].[ProductSubcategory] ps ON P.ProductSubCategoryId=PS.ProductSubCategoryId"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"StorageAccount": {
+						"type": "string",
+						"defaultValue": "learnadfdemo"
+					},
+					"Container": {
+						"type": "string",
+						"defaultValue": "productdataprocessing"
+					},
+					"UnZipFolder": {
+						"type": "string",
+						"defaultValue": "ProcessingFiles/UnzippedFiles"
+					}
+				},
+				"variables": {
+					"RawFileFolderPath": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-08T05:15:05Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ProdutFileLoad')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "UnZipOrderFiles",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"StorageAccount": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount')]",
+							"Container": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_Container')]",
+							"UnZipFolder": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder')]"
+						}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Hour",
+						"interval": 24,
+						"startTime": "2025-01-09T06:01:00",
+						"timeZone": "India Standard Time"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/UnZipOrderFiles')]"
+			]
+		}
+	]
+}

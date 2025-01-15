@@ -1,0 +1,2715 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "Sanadsahu"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ExistsTransformation')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductTable",
+								"type": "DatasetReference"
+							},
+							"name": "ProductSrc"
+						},
+						{
+							"dataset": {
+								"referenceName": "ProductSubCategory",
+								"type": "DatasetReference"
+							},
+							"name": "PorductSubcategory"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ExistsOutputCSV",
+								"type": "DatasetReference"
+							},
+							"name": "ExistsOutput"
+						}
+					],
+					"transformations": [
+						{
+							"name": "CheckCategoryExists"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ProductSrc",
+						"source(output(",
+						"          ProductSubcategoryID as integer,",
+						"          ProductCategoryID as integer,",
+						"          Name as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> PorductSubcategory",
+						"ProductSrc, PorductSubcategory exists(ProductSrc@ProductSubcategoryID == PorductSubcategory@ProductSubcategoryID,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> CheckCategoryExists",
+						"CheckCategoryExists sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['ExistsMatchoutput.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> ExistsOutput"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FuzzyMatch')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "UncleanedFuzzySrc",
+								"type": "DatasetReference"
+							},
+							"name": "CountyUSZipsUnClean"
+						},
+						{
+							"dataset": {
+								"referenceName": "CountyRef",
+								"type": "DatasetReference"
+							},
+							"name": "CountySource"
+						},
+						{
+							"dataset": {
+								"referenceName": "StateRef",
+								"type": "DatasetReference"
+							},
+							"name": "Statesource"
+						},
+						{
+							"dataset": {
+								"referenceName": "ZipCodeSrc",
+								"type": "DatasetReference"
+							},
+							"name": "ZipCodeSource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CountyDataRaw",
+								"type": "DatasetReference"
+							},
+							"name": "LoadCountyDataRaw"
+						},
+						{
+							"dataset": {
+								"referenceName": "CountyRefTarget",
+								"type": "DatasetReference"
+							},
+							"name": "CountyRef"
+						},
+						{
+							"dataset": {
+								"referenceName": "StateRefTarget",
+								"type": "DatasetReference"
+							},
+							"name": "StateRef"
+						},
+						{
+							"dataset": {
+								"referenceName": "ZipCodeReftarget",
+								"type": "DatasetReference"
+							},
+							"name": "ZipcodeRef"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          zip as integer,",
+						"          lat as float,",
+						"          lng as float,",
+						"          city as string,",
+						"          state_id as string,",
+						"          state_name as string,",
+						"          population as integer,",
+						"          density as float,",
+						"          county_fips as integer,",
+						"          county_name as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CountyUSZipsUnClean",
+						"source(output(",
+						"          CountyId as string,",
+						"          Name as string,",
+						"          Fips as string,",
+						"          StateId as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CountySource",
+						"source(output(",
+						"          StateId as string,",
+						"          Name as string,",
+						"          Fips as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Statesource",
+						"source(output(",
+						"          ZipCodeId as integer,",
+						"          ZipTypeId as string,",
+						"          PrevalentCounty as integer,",
+						"          Latitude as float,",
+						"          Longitude as float,",
+						"          CityName as string,",
+						"          CityTypeId as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> ZipCodeSource",
+						"CountyUSZipsUnClean sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Zip as integer,",
+						"          Lat as double,",
+						"          Lgn as double,",
+						"          City as string,",
+						"          Statecode as string,",
+						"          Statename as string,",
+						"          population as long,",
+						"          density as double,",
+						"          county_fips as integer,",
+						"          county_name as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Zip = zip,",
+						"          Lat = lat,",
+						"          Lgn = lng,",
+						"          City = city,",
+						"          Statecode = state_id,",
+						"          Statename = state_name,",
+						"          population,",
+						"          density,",
+						"          county_fips,",
+						"          county_name",
+						"     )) ~> LoadCountyDataRaw",
+						"CountySource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          CountyId as integer,",
+						"          CountyName as string,",
+						"          Fips as integer,",
+						"          StateCode as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          CountyId,",
+						"          CountyName = Name,",
+						"          Fips,",
+						"          StateCode = StateId",
+						"     )) ~> CountyRef",
+						"Statesource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          StateId as integer,",
+						"          StateCode as string,",
+						"          StateName as string,",
+						"          Fips as integer",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          StateCode = StateId,",
+						"          StateName = Name,",
+						"          Fips",
+						"     )) ~> StateRef",
+						"ZipCodeSource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ZipCodeId as integer,",
+						"          ZipTypeId as string,",
+						"          PrevalentCounty as integer,",
+						"          Latitude as double,",
+						"          Longitude as double,",
+						"          CityName as string,",
+						"          CityTypeId as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ZipCodeId,",
+						"          ZipTypeId,",
+						"          PrevalentCounty,",
+						"          Latitude,",
+						"          Longitude,",
+						"          CityName,",
+						"          CityTypeId",
+						"     )) ~> ZipcodeRef"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportProductData')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductDataCSV",
+								"type": "DatasetReference"
+							},
+							"name": "ProductDataRaw"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ProductTable",
+								"type": "DatasetReference"
+							},
+							"name": "LoadProductTable"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AssertProductColor"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ProductID as short,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as short,",
+						"          ReorderPoint as short,",
+						"          StandardCost as double,",
+						"          ListPrice as double,",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as string,",
+						"          DaysToManufacture as short,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as string,",
+						"          ProductModelID as string,",
+						"          SellStartDate as string,",
+						"          SellEndDate as string,",
+						"          DiscontinuedDate as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> ProductDataRaw",
+						"ProductDataRaw assert(expectTrue(Color!='Silver/Black', false, 'AssertColor', null, \"ignore silver/black color\")) ~> AssertProductColor",
+						"AssertProductColor sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Name,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          SafetyStockLevel,",
+						"          ReorderPoint,",
+						"          StandardCost,",
+						"          ListPrice,",
+						"          Size,",
+						"          SizeUnitMeasureCode,",
+						"          WeightUnitMeasureCode,",
+						"          Weight,",
+						"          DaysToManufacture,",
+						"          ProductLine,",
+						"          Class,",
+						"          Style,",
+						"          ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          SellStartDate,",
+						"          SellEndDate,",
+						"          DiscontinuedDate,",
+						"          rowguid,",
+						"          ModifiedDate",
+						"     )) ~> LoadProductTable"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportSalesFileToDBDW')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductFileAWDW",
+								"type": "DatasetReference"
+							},
+							"name": "ProductFileOutput"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "SalesorderData",
+								"type": "DatasetReference"
+							},
+							"name": "SalesOrderTarget"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AlterRowTrans"
+						},
+						{
+							"name": "DeriveDataSource"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     FileSourceType as string (\"AWDW\")",
+						"}",
+						"source(output(",
+						"          DW_SalesOrderID as integer,",
+						"          DW_SalesOrderDetailID as integer,",
+						"          DW_CarrierTrackingNumber as string,",
+						"          DW_OrderQty as integer,",
+						"          DW_ProductID as integer,",
+						"          DW_SpecialOfferID as integer,",
+						"          DW_UnitPrice as float,",
+						"          DW_UnitPriceDiscount as float",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> ProductFileOutput",
+						"ProductFileOutput alterRow(upsertIf(DW_SalesOrderDetailID==DW_SalesOrderDetailID)) ~> AlterRowTrans",
+						"AlterRowTrans derive(DataSource = $FileSourceType) ~> DeriveDataSource",
+						"DeriveDataSource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          SalesOrderID as integer,",
+						"          SalesOrderDetailID as integer,",
+						"          CarrierTrackingNumber as string,",
+						"          OrderQty as integer,",
+						"          ProductID as integer,",
+						"          ProductCategoryId as integer,",
+						"          SpecialOfferID as integer,",
+						"          UnitPrice as decimal(19,4),",
+						"          UnitPriceDiscount as decimal(19,4),",
+						"          LineTotal as decimal(38,6),",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp,",
+						"          DataSource as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['SalesOrderDetailID'],",
+						"     format: 'table',",
+						"     preSQLs:['SET IDENTITY_INSERT [Sales].[SalesOrderDetail] ON;'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          SalesOrderID = DW_SalesOrderID,",
+						"          SalesOrderDetailID = DW_SalesOrderDetailID,",
+						"          CarrierTrackingNumber = DW_CarrierTrackingNumber,",
+						"          OrderQty = DW_OrderQty,",
+						"          ProductID = DW_ProductID,",
+						"          SpecialOfferID = DW_SpecialOfferID,",
+						"          UnitPrice = DW_UnitPrice,",
+						"          UnitPriceDiscount = DW_UnitPriceDiscount,",
+						"          DataSource",
+						"     )) ~> SalesOrderTarget"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportSalesFilesToDB')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductFileSrc",
+								"type": "DatasetReference"
+							},
+							"name": "ProductFile"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "SalesorderData",
+								"type": "DatasetReference"
+							},
+							"name": "SalesOrderTarget"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AlterRow1"
+						},
+						{
+							"name": "DeriveDatasource"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     DataSrc as string",
+						"}",
+						"source(output(",
+						"          SalesOrderID as integer,",
+						"          SalesOrderDetailID as integer,",
+						"          CarrierTrackingNumber as string,",
+						"          OrderQty as integer,",
+						"          ProductID as integer,",
+						"          SpecialOfferID as integer,",
+						"          UnitPrice as float,",
+						"          UnitPriceDiscount as float",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> ProductFile",
+						"ProductFile alterRow(upsertIf(SalesOrderDetailID==SalesOrderDetailID)) ~> AlterRow1",
+						"AlterRow1 derive(DataSource = $DataSrc) ~> DeriveDatasource",
+						"DeriveDatasource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          SalesOrderID as integer,",
+						"          SalesOrderDetailID as integer,",
+						"          CarrierTrackingNumber as string,",
+						"          OrderQty as integer,",
+						"          ProductID as integer,",
+						"          ProductCategoryId as integer,",
+						"          SpecialOfferID as integer,",
+						"          UnitPrice as decimal(19,4),",
+						"          UnitPriceDiscount as decimal(19,4),",
+						"          LineTotal as decimal(38,6),",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp,",
+						"          DataSource as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['SalesOrderDetailID'],",
+						"     format: 'table',",
+						"     preSQLs:['SET IDENTITY_INSERT [Sales].[SalesOrderDetail] ON;'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          SalesOrderID,",
+						"          SalesOrderDetailID,",
+						"          CarrierTrackingNumber,",
+						"          OrderQty,",
+						"          ProductID,",
+						"          SpecialOfferID,",
+						"          UnitPrice,",
+						"          UnitPriceDiscount,",
+						"          DataSource",
+						"     )) ~> SalesOrderTarget"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportSalesFilesToDB_copy1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductFileSrc",
+								"type": "DatasetReference"
+							},
+							"name": "ProductFile"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "SalesorderData",
+								"type": "DatasetReference"
+							},
+							"name": "SalesOrderTarget"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          SalesOrderID as string,",
+						"          SalesOrderDetailID as string,",
+						"          CarrierTrackingNumber as string,",
+						"          OrderQty as string,",
+						"          ProductID as string,",
+						"          SpecialOfferID as string,",
+						"          UnitPrice as string,",
+						"          UnitPriceDiscount as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> ProductFile",
+						"ProductFile alterRow(upsertIf(SalesOrderDetailID==SalesOrderDetailID)) ~> AlterRow1",
+						"AlterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          SalesOrderID as integer,",
+						"          SalesOrderDetailID as integer,",
+						"          CarrierTrackingNumber as string,",
+						"          OrderQty as integer,",
+						"          ProductID as integer,",
+						"          ProductCategoryId as integer,",
+						"          SpecialOfferID as integer,",
+						"          UnitPrice as decimal(19,4),",
+						"          UnitPriceDiscount as decimal(19,4),",
+						"          LineTotal as decimal(38,6),",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp,",
+						"          DataSource as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['SalesOrderDetailID'],",
+						"     format: 'table',",
+						"     preSQLs:['SET IDENTITY_INSERT [Sales].[SalesOrderDetail] ON;'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          SalesOrderID,",
+						"          SalesOrderDetailID,",
+						"          CarrierTrackingNumber,",
+						"          OrderQty,",
+						"          ProductID,",
+						"          SpecialOfferID,",
+						"          UnitPrice,",
+						"          UnitPriceDiscount",
+						"     )) ~> SalesOrderTarget"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/JoinTransformation')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CategorizedProduct",
+								"type": "DatasetReference"
+							},
+							"name": "ProductSource"
+						},
+						{
+							"dataset": {
+								"referenceName": "ProductSubCategory",
+								"type": "DatasetReference"
+							},
+							"name": "SubcategorySource"
+						},
+						{
+							"dataset": {
+								"referenceName": "ProductCategory",
+								"type": "DatasetReference"
+							},
+							"name": "ProductCategory"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ProductWithSubcategoryInfo",
+								"type": "DatasetReference"
+							},
+							"name": "ExcelOutput"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SubcategoryJoin"
+						},
+						{
+							"name": "CategoryDataperProduct"
+						},
+						{
+							"name": "CategoryJoin"
+						},
+						{
+							"name": "SelectFinalColumns"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ProductSource",
+						"source(output(",
+						"          ProductSubcategoryID as integer,",
+						"          ProductCategoryID as integer,",
+						"          Name as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SubcategorySource",
+						"source(output(",
+						"          CategoryId as integer,",
+						"          CategoryName as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ProductCategory",
+						"ProductSource, SubcategorySource join(ProductSource@ProductSubcategoryID == SubcategorySource@ProductSubcategoryID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> SubcategoryJoin",
+						"SubcategoryJoin select(mapColumn(",
+						"          ProductID,",
+						"          ProductName = ProductSource@Name,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          SafetyStockLevel,",
+						"          ReorderPoint,",
+						"          StandardCost,",
+						"          ListPrice,",
+						"          Size,",
+						"          SizeUnitMeasureCode,",
+						"          WeightUnitMeasureCode,",
+						"          Weight,",
+						"          DaysToManufacture,",
+						"          ProductLine,",
+						"          Class,",
+						"          Style,",
+						"          ProductSubcategoryID = ProductSource@ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          SellStartDate,",
+						"          SellEndDate,",
+						"          DiscontinuedDate,",
+						"          rowguid = ProductSource@rowguid,",
+						"          ModifiedDate = ProductSource@ModifiedDate,",
+						"          ProductSubcategoryID = SubcategorySource@ProductSubcategoryID,",
+						"          ProductCategoryID,",
+						"          PorductSubcategoryName = SubcategorySource@Name,",
+						"          rowguid = SubcategorySource@rowguid,",
+						"          ModifiedDate = SubcategorySource@ModifiedDate",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> CategoryDataperProduct",
+						"CategoryDataperProduct, ProductCategory join(ProductCategoryID == CategoryId,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> CategoryJoin",
+						"CategoryJoin select(mapColumn(",
+						"          ProductID,",
+						"          ProductName,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          ProductCategoryID,",
+						"          ProductSubcategoryName = PorductSubcategoryName,",
+						"          CategoryName",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SelectFinalColumns",
+						"SelectFinalColumns sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ProductID as string,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as string,",
+						"          FinishedGoodsFlag as string,",
+						"          Color as string,",
+						"          SafetyStockLevel as string,",
+						"          ReorderPoint as string,",
+						"          StandardCost as string,",
+						"          ListPrice as string,",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as string,",
+						"          DaysToManufacture as string,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as string,",
+						"          ProductModelID as string,",
+						"          SellStartDate as string,",
+						"          SellEndDate as string,",
+						"          DiscontinuedDate as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as string",
+						"     ),",
+						"     partitionFileNames:['ProductDetails.csv'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> ExcelOutput"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LookUpTrans')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductTable",
+								"type": "DatasetReference"
+							},
+							"name": "ProductSrc"
+						},
+						{
+							"dataset": {
+								"referenceName": "ProductSubCategory",
+								"type": "DatasetReference"
+							},
+							"name": "SubCategorySrc"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CategorizedProduct",
+								"type": "DatasetReference"
+							},
+							"name": "Categorized"
+						},
+						{
+							"dataset": {
+								"referenceName": "UnCategorizedProduct",
+								"type": "DatasetReference"
+							},
+							"name": "UnCategorized"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SubcategoryLookUp"
+						},
+						{
+							"name": "split1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ProductSrc",
+						"source(output(",
+						"          ProductSubcategoryID as integer,",
+						"          ProductCategoryID as integer,",
+						"          Name as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SubCategorySrc",
+						"ProductSrc, SubCategorySrc lookup(ProductSrc@ProductSubcategoryID == SubCategorySrc@ProductSubcategoryID,",
+						"     multiple: false,",
+						"     pickup: 'any',",
+						"     broadcast: 'auto')~> SubcategoryLookUp",
+						"SubcategoryLookUp split(isNull(SubCategorySrc@ProductSubcategoryID)==false(),",
+						"     disjoint: false) ~> split1@(Subcategorymatch, unmatched)",
+						"split1@Subcategorymatch sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     preSQLs:['SET IDENTITY_INSERT dbo.CategorizedProduct ON;'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> Categorized",
+						"split1@unmatched sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     preSQLs:['SET IDENTITY_INSERT dbo.UnCategorizedProduct ON'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> UnCategorized"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PerformFuzzyLooup')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CountyDataRaw",
+								"type": "DatasetReference"
+							},
+							"name": "CountyDataRaw"
+						},
+						{
+							"dataset": {
+								"referenceName": "CountyRefTarget",
+								"type": "DatasetReference"
+							},
+							"name": "CountyLookUp"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CountyDataFuzyy",
+								"type": "DatasetReference"
+							},
+							"name": "FuzzyCountyData"
+						}
+					],
+					"transformations": [
+						{
+							"name": "FuzzyMatch"
+						},
+						{
+							"name": "select1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Zip as integer,",
+						"          Lat as double,",
+						"          Lgn as double,",
+						"          City as string,",
+						"          Statecode as string,",
+						"          Statename as string,",
+						"          population as long,",
+						"          density as double,",
+						"          county_fips as integer,",
+						"          county_name as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> CountyDataRaw",
+						"source(output(",
+						"          CountyId as integer,",
+						"          CountyName as string,",
+						"          Fips as integer,",
+						"          StateCode as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> CountyLookUp",
+						"CountyDataRaw, CountyLookUp join(fuzzyCompare(county_name, CountyName, 80.00),",
+						"     joinType:'inner',",
+						"     matchType:'fuzzy',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'off')~> FuzzyMatch",
+						"FuzzyMatch select(mapColumn(",
+						"          Zip,",
+						"          Lat,",
+						"          Lgn,",
+						"          City,",
+						"          Statecode = CountyDataRaw@Statecode,",
+						"          Statename,",
+						"          population,",
+						"          density,",
+						"          county_fips,",
+						"          county_name,",
+						"          CountyId,",
+						"          CountyName,",
+						"          Fips",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Zip as integer,",
+						"          Lat as double,",
+						"          Lgn as double,",
+						"          City as string,",
+						"          Statecode as string,",
+						"          Statename as string,",
+						"          population as long,",
+						"          density as double,",
+						"          county_fips as integer,",
+						"          county_name as string,",
+						"          CountyNameUpdated as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Zip,",
+						"          Lat,",
+						"          Lgn,",
+						"          City,",
+						"          Statecode,",
+						"          Statename,",
+						"          population,",
+						"          density,",
+						"          county_fips,",
+						"          county_name,",
+						"          CountyNameUpdated = CountyName",
+						"     )) ~> FuzzyCountyData"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SplitProdData')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ProductTable",
+								"type": "DatasetReference"
+							},
+							"name": "ProdSource"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "ProductBlack"
+						},
+						{
+							"linkedService": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "ProductRed"
+						},
+						{
+							"linkedService": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "RemainingProduct"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SplitColorBlack"
+						},
+						{
+							"name": "SplitColorRed"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          MakeFlag as boolean,",
+						"          FinishedGoodsFlag as boolean,",
+						"          Color as string,",
+						"          SafetyStockLevel as integer,",
+						"          ReorderPoint as integer,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          SizeUnitMeasureCode as string,",
+						"          WeightUnitMeasureCode as string,",
+						"          Weight as decimal(8,2),",
+						"          DaysToManufacture as integer,",
+						"          ProductLine as string,",
+						"          Class as string,",
+						"          Style as string,",
+						"          ProductSubcategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ProdSource",
+						"ProdSource split(Color=='Black',",
+						"     disjoint: false) ~> SplitColorBlack@(ColorBlack, RestColor)",
+						"SplitColorBlack@RestColor split(Color=='Red',",
+						"     disjoint: false) ~> SplitColorRed@(ColorRed, RemainingRows)",
+						"SplitColorBlack@ColorBlack sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'ProductBlack',",
+						"     preSQLs:['SET IDENTITY_INSERT dbo.ProductBlack ON;'],",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     truncate: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ProductID,",
+						"          Name,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          SafetyStockLevel,",
+						"          ReorderPoint,",
+						"          StandardCost,",
+						"          ListPrice,",
+						"          Size,",
+						"          SizeUnitMeasureCode,",
+						"          WeightUnitMeasureCode,",
+						"          Weight,",
+						"          DaysToManufacture,",
+						"          ProductLine,",
+						"          Class,",
+						"          Style,",
+						"          ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          SellStartDate,",
+						"          SellEndDate,",
+						"          DiscontinuedDate,",
+						"          rowguid,",
+						"          ModifiedDate",
+						"     )) ~> ProductBlack",
+						"SplitColorRed@ColorRed sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'ProductRed',",
+						"     preSQLs:['SET IDENTITY_INSERT dbo.ProductRed ON;'],",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ProductID,",
+						"          Name,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          SafetyStockLevel,",
+						"          ReorderPoint,",
+						"          StandardCost,",
+						"          ListPrice,",
+						"          Size,",
+						"          SizeUnitMeasureCode,",
+						"          WeightUnitMeasureCode,",
+						"          Weight,",
+						"          DaysToManufacture,",
+						"          ProductLine,",
+						"          Class,",
+						"          Style,",
+						"          ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          SellStartDate,",
+						"          SellEndDate,",
+						"          DiscontinuedDate,",
+						"          rowguid,",
+						"          ModifiedDate",
+						"     )) ~> ProductRed",
+						"SplitColorRed@RemainingRows sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'ProductRemaining',",
+						"     preSQLs:['SET IDENTITY_INSERT dbo.ProductRemaining ON;'],",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     truncate: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ProductID,",
+						"          Name,",
+						"          ProductNumber,",
+						"          MakeFlag,",
+						"          FinishedGoodsFlag,",
+						"          Color,",
+						"          SafetyStockLevel,",
+						"          ReorderPoint,",
+						"          StandardCost,",
+						"          ListPrice,",
+						"          Size,",
+						"          SizeUnitMeasureCode,",
+						"          WeightUnitMeasureCode,",
+						"          Weight,",
+						"          DaysToManufacture,",
+						"          ProductLine,",
+						"          Class,",
+						"          Style,",
+						"          ProductSubcategoryID,",
+						"          ProductModelID,",
+						"          SellStartDate,",
+						"          SellEndDate,",
+						"          DiscontinuedDate,",
+						"          rowguid,",
+						"          ModifiedDate",
+						"     )) ~> RemainingProduct"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable3",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"rejectedDataLinkedService": {
+								"referenceName": "AzureBlobStorage1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [
+						{
+							"name": "Assert1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source1 assert(expectTrue(UnitsSold>1000, false, 'assert1', null, \"assertionval\")) ~> Assert1",
+						"Assert1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'allErrors',",
+						"     outputRejectedData: true,",
+						"     rejectedData_container: 'az-blob-test',",
+						"     transactionCommit: 'single',",
+						"     reportSuccessOnError: false,",
+						"     outputAssertFailedRows: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable4",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"rejectedDataLinkedService": {
+								"referenceName": "AzureBlobStorage1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [
+						{
+							"name": "Assert1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source1 assert(expectTrue(UnitsSold<1000, false, 'assert1')) ~> Assert1",
+						"Assert1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Segment as string,",
+						"          Country as string,",
+						"          Product as string,",
+						"          DiscountBand as string,",
+						"          UnitsSold as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'allErrors',",
+						"     transactionCommit: 'single',",
+						"     reportSuccessOnError: false,",
+						"     outputAssertFailedRows: true,",
+						"     assertFailure_container: 'az-blob-test',",
+						"     ignoreAssertFailedRows: true,",
+						"     mapColumn(",
+						"          Segment,",
+						"          Country,",
+						"          Product,",
+						"          DiscountBand,",
+						"          UnitsSold",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AssertData')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "AssertedData",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "AssertDF",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"sourceFinanceTbl": {},
+									"sinkValidRows": {},
+									"sinkErrorRows": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyData_DerivedCol')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy_FileData_ToTable",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ExcelSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "Segment",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Segment",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Product",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Product",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Discount Band",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DiscountBand",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Units Sold",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "UnitsSold",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Excel1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "AddingDerivedCol",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Copy_FileData_ToTable",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Derivedcol",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:39Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyFileShareToContainer')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FuzzyLookup')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "FuzzyLookUpDataLoad",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "FuzzyMatch",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CountyUSZipsUnClean": {},
+									"CountySource": {},
+									"Statesource": {},
+									"ZipCodeSource": {},
+									"LoadCountyDataRaw": {},
+									"CountyRef": {},
+									"StateRef": {},
+									"ZipcodeRef": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "UpdateCounty",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "FuzzyLookUpDataLoad",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "AzureSqlDatabase1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "UPDATE CountyDataRaw \nSET county_name=replace(county_name,'a','')"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					},
+					{
+						"name": "PerformFuzzyMatch",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "UpdateCounty",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "PerformFuzzyLooup",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CountyDataRaw": {},
+									"CountyLookUp": {},
+									"FuzzyCountyData": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/FuzzyMatch')]",
+				"[concat(variables('factoryId'), '/dataflows/PerformFuzzyLooup')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportSalesData')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ImportSalesFile",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ImportSalesFilesToDB",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProductFile": {
+										"FilePath": {
+											"value": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv",
+											"type": "Expression"
+										},
+										"ContainerName": "productdataprocessing"
+									},
+									"SalesOrderTarget": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "SetFileFlag",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "FileType",
+							"value": {
+								"value": "@if(contains(pipeline().parameters.FilePath,'AWDB'),'AWDB',if(contains(pipeline().parameters.FilePath,'AWDW'),'AWDW','Def'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "CheckFilePattern",
+						"type": "Switch",
+						"dependsOn": [
+							{
+								"activity": "SetFileFlag",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@if(contains(pipeline().parameters.FilePath,'AWDB'),'AWDB',if(contains(pipeline().parameters.FilePath,'AWDW'),'AWDW','Default'))",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "AWDB",
+									"activities": [
+										{
+											"name": "LoadAWDBFiles",
+											"type": "ExecuteDataFlow",
+											"dependsOn": [
+												{
+													"activity": "UpdateDataSourceDB",
+													"dependencyConditions": [
+														"Completed"
+													]
+												}
+											],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"dataflow": {
+													"referenceName": "ImportSalesFilesToDB",
+													"type": "DataFlowReference",
+													"parameters": {
+														"DataSrc": "'AWDB'"
+													},
+													"datasetParameters": {
+														"ProductFile": {
+															"FilePath": {
+																"value": "@pipeline().parameters.FilePath",
+																"type": "Expression"
+															},
+															"ContainerName": {
+																"value": "@pipeline().parameters.ContainerName",
+																"type": "Expression"
+															}
+														},
+														"SalesOrderTarget": {}
+													}
+												},
+												"staging": {},
+												"compute": {
+													"coreCount": 8,
+													"computeType": "General"
+												},
+												"traceLevel": "Fine"
+											}
+										},
+										{
+											"name": "UpdateDataSourceDB",
+											"type": "Script",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "AzureSqlDatabase1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": {
+															"value": "UPDATE dbo.FileProcessing SET Datasource='@{variables('FileType')}' WHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)",
+															"type": "Expression"
+														}
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										},
+										{
+											"name": "Update IsProcessedDB",
+											"type": "Script",
+											"dependsOn": [
+												{
+													"activity": "LoadAWDBFiles",
+													"dependencyConditions": [
+														"Completed"
+													]
+												}
+											],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "AzureSqlDatabase1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": "UPDATE dbo.FileProcessing SET IsProcessed=1\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)"
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										}
+									]
+								},
+								{
+									"value": "AWDW",
+									"activities": [
+										{
+											"name": "LoadAWDWFiles",
+											"type": "ExecuteDataFlow",
+											"dependsOn": [
+												{
+													"activity": "UpdateDataSourceDW",
+													"dependencyConditions": [
+														"Succeeded"
+													]
+												}
+											],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"dataflow": {
+													"referenceName": "ImportSalesFileToDBDW",
+													"type": "DataFlowReference",
+													"parameters": {
+														"FileSourceType": "'AWDW'"
+													},
+													"datasetParameters": {
+														"ProductFileOutput": {
+															"ContainerName": {
+																"value": "@pipeline().parameters.ContainerName",
+																"type": "Expression"
+															},
+															"FilePath": {
+																"value": "@pipeline().parameters.FilePath",
+																"type": "Expression"
+															}
+														},
+														"SalesOrderTarget": {}
+													}
+												},
+												"staging": {},
+												"compute": {
+													"coreCount": 8,
+													"computeType": "General"
+												},
+												"traceLevel": "Fine"
+											}
+										},
+										{
+											"name": "UpdateDataSourceDW",
+											"type": "Script",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "AzureSqlDatabase1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": {
+															"value": "UPDATE dbo.FileProcessing SET Datasource='@{variables('FileType')}'\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)",
+															"type": "Expression"
+														}
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										},
+										{
+											"name": "UpdateIsProcessedDW",
+											"type": "Script",
+											"dependsOn": [
+												{
+													"activity": "LoadAWDWFiles",
+													"dependencyConditions": [
+														"Succeeded"
+													]
+												}
+											],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "AzureSqlDatabase1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": "UPDATE dbo.FileProcessing SET IsProcessed=1\nWHERE FileProcessingId =(SELECT MAX(FileProcessingId) FROM dbo.FileProcessing)"
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										}
+									]
+								}
+							],
+							"defaultActivities": [
+								{
+									"name": "Lookup1",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": "SELECT ''",
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "AzureSqlTable1",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"ContainerName": {
+						"type": "string",
+						"defaultValue": "productdataprocessing"
+					},
+					"FilePath": {
+						"type": "string",
+						"defaultValue": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023_AWDW.csv"
+					}
+				},
+				"variables": {
+					"FileProp": {
+						"type": "String"
+					},
+					"FileOut": {
+						"type": "String"
+					},
+					"FileType": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-08T12:23:58Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ImportSalesFilesToDB')]",
+				"[concat(variables('factoryId'), '/dataflows/ImportSalesFileToDBDW')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ImportSalesData_copy1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ImportSalesFile",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ImportSalesFilesToDB",
+								"type": "DataFlowReference",
+								"parameters": {
+									"DataSrc": {
+										"value": "'@{'AWDB'}'",
+										"type": "Expression"
+									}
+								},
+								"datasetParameters": {
+									"ProductFile": {
+										"FilePath": {
+											"value": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv",
+											"type": "Expression"
+										},
+										"ContainerName": "productdataprocessing"
+									},
+									"SalesOrderTarget": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"ContainerName": {
+						"type": "string",
+						"defaultValue": "productdataprocessing"
+					},
+					"FilePath": {
+						"type": "string",
+						"defaultValue": "ProcessingFiles/UnzippedFiles/SalesOrderDetail2023.csv"
+					}
+				},
+				"folder": {
+					"name": "ProductValidationProcess"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-08T05:28:48Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ImportSalesFilesToDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LookUpTransformation')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LookUpTrans",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "LookUpTrans",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProductSrc": {},
+									"SubCategorySrc": {},
+									"Categorized": {},
+									"UnCategorized": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "ExistsTrans",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "LookUpTrans",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ExistsTransformation",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProductSrc": {},
+									"PorductSubcategory": {},
+									"ExistsOutput": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/LookUpTrans')]",
+				"[concat(variables('factoryId'), '/dataflows/ExistsTransformation')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ProductSplit')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ImportDataToDB",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ImportProductData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProductDataRaw": {},
+									"LoadProductTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "GroupProductByColor",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "ImportDataToDB",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "SplitProdData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProdSource": {},
+									"ProductBlack": {},
+									"ProductRed": {},
+									"RemainingProduct": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "GenerateProductDetails_Jointrans",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "GroupProductByColor",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "JoinTransformation",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ProductSource": {},
+									"SubcategorySource": {},
+									"ProductCategory": {},
+									"ExcelOutput": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-07T04:43:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ImportProductData')]",
+				"[concat(variables('factoryId'), '/dataflows/SplitProdData')]",
+				"[concat(variables('factoryId'), '/dataflows/JoinTransformation')]"
+			]
+		}
+	]
+}
