@@ -5,12 +5,8 @@
 		"annotations": [],
 		"type": "AzureBlobStorage",
 		"typeProperties": {
-			"connectionString": "DefaultEndpointsProtocol=https;AccountName=learnadfdemo;EndpointSuffix=core.windows.net;",
-			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQDdDRDUzQkIyLTk2NzktNEQxOS1BMkNFLTg2MTFEREI3RTIzMF9hZmRlMjhjOC0yY2JjLTQxOTEtYTFiZS0zOTk2NTQzNDY4ODEiDQp9"
-		},
-		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
-			"type": "IntegrationRuntimeReference"
+			"connectionString": "DefaultEndpointsProtocol=https;AccountName=adfdemostoragesanad;EndpointSuffix=core.windows.net;",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQDk5NTUwRkFELUU0RjEtNDBCOS1BREQ5LTE1MjAzQjk1OTYwM19hOTY3YmU4Zi02ZjZjLTQyY2UtOTE2Mi05Mzc5OTg2MjlmN2EiDQp9"
 		}
 	}
 }
