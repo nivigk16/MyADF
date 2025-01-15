@@ -49,6 +49,18 @@
 		},
 		"ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder": {
 			"value": "ProcessingFiles/UnzippedFiles"
+		},
+		"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+			"value": "adfconatiner"
+		},
+		"TumblingWT_properties_pipeline_parameters_StorageAccount": {
+			"value": "learnadfdemo"
+		},
+		"TumblingWT_properties_pipeline_parameters_Container": {
+			"value": "productdataprocessing"
+		},
+		"TumblingWT_properties_pipeline_parameters_UnZipFolder": {
+			"value": "ProcessingFiles/UnzippedFiles"
 		}
 	}
 }

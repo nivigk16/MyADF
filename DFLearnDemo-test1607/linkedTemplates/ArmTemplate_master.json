@@ -67,6 +67,22 @@
 			"type": "string",
 			"defaultValue": "ProcessingFiles/UnzippedFiles"
 		},
+		"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+			"type": "string",
+			"defaultValue": "adfconatiner"
+		},
+		"TumblingWT_properties_pipeline_parameters_StorageAccount": {
+			"type": "string",
+			"defaultValue": "learnadfdemo"
+		},
+		"TumblingWT_properties_pipeline_parameters_Container": {
+			"type": "string",
+			"defaultValue": "productdataprocessing"
+		},
+		"TumblingWT_properties_pipeline_parameters_UnZipFolder": {
+			"type": "string",
+			"defaultValue": "ProcessingFiles/UnzippedFiles"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -208,6 +224,9 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"TW_SendMail_properties_pipeline_parameters_ContainerName": {
+						"value": "[parameters('TW_SendMail_properties_pipeline_parameters_ContainerName')]"
+					},
 					"ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount": {
 						"value": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_StorageAccount')]"
 					},
@@ -216,6 +235,15 @@
 					},
 					"ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder": {
 						"value": "[parameters('ProdutFileLoad_properties_UnZipOrderFiles_parameters_UnZipFolder')]"
+					},
+					"TumblingWT_properties_pipeline_parameters_StorageAccount": {
+						"value": "[parameters('TumblingWT_properties_pipeline_parameters_StorageAccount')]"
+					},
+					"TumblingWT_properties_pipeline_parameters_Container": {
+						"value": "[parameters('TumblingWT_properties_pipeline_parameters_Container')]"
+					},
+					"TumblingWT_properties_pipeline_parameters_UnZipFolder": {
+						"value": "[parameters('TumblingWT_properties_pipeline_parameters_UnZipFolder')]"
 					}
 				}
 			},
