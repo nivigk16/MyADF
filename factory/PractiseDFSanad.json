@@ -1,0 +1,9 @@
+{
+	"name": "PractiseDFSanad",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "5b9e0daa-3a14-41a0-84ba-eda749f2587c",
+		"tenantId": "f8bf855d-3219-49b9-abf4-24075fb5e0c8"
+	}
+}
