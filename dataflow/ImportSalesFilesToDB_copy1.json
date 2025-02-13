@@ -27,6 +27,9 @@
 			"transformations": [
 				{
 					"name": "AlterRow1"
+				},
+				{
+					"name": "filter1"
 				}
 			],
 			"scriptLines": [
@@ -44,7 +47,8 @@
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> ProductFile",
 				"ProductFile alterRow(upsertIf(SalesOrderDetailID==SalesOrderDetailID)) ~> AlterRow1",
-				"AlterRow1 sink(allowSchemaDrift: true,",
+				"AlterRow1 filter(toInteger(UnitPrice)>1000) ~> filter1",
+				"filter1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          SalesOrderID as integer,",

@@ -1,0 +1,46 @@
+{
+	"name": "dataflow3",
+	"properties": {
+		"folder": {
+			"name": "ProductValidationProcess"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Excel2",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "window1"
+				},
+				{
+					"name": "filter1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {Roll No} as short,",
+				"          Name as string,",
+				"          Dept as string,",
+				"          Score as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 window(over(Name,",
+				"          Dept,",
+				"          {Roll No}),",
+				"     asc({Roll No}, true),",
+				"     RowNum = rowNumber()) ~> window1",
+				"window1 filter(RowNum==1) ~> filter1"
+			]
+		}
+	}
+}
