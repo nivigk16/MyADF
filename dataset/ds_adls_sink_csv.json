@@ -1,0 +1,23 @@
+{
+	"name": "ds_adls_sink_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_conn",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "vasat/target",
+				"fileSystem": "blobstorage"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
