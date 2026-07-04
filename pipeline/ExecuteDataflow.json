@@ -20,11 +20,7 @@
 						"type": "DataFlowReference"
 					},
 					"staging": {
-						"linkedService": {
-							"referenceName": "ls_adls_conn",
-							"type": "LinkedServiceReference"
-						},
-						"folderPath": "blobstorage/Staging"
+						"folderPath": ""
 					},
 					"compute": {
 						"coreCount": 8,
