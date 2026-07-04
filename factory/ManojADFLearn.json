@@ -1,0 +1,15 @@
+{
+	"name": "ManojADFLearn",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "891ebfab-25ff-407c-ab46-1249a306e97c",
+		"tenantId": "6135d91b-74a8-47cb-8d24-26692a9b915a"
+	}
+}
