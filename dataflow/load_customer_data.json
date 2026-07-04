@@ -110,7 +110,6 @@
 				"          Phone1,",
 				"          Phone2,",
 				"          Email,",
-				"          SubscriptionDate,",
 				"          Website,",
 				"          FullName",
 				"     )) ~> sinkTable"
