@@ -1,0 +1,16 @@
+{
+	"name": "ds_sqlsever_customer_sink",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sql_server_manoj",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CustomerDF"
+		}
+	}
+}

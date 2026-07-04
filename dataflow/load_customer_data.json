@@ -15,10 +15,35 @@
 					"name": "readcsv"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_sqlsever_customer_sink",
+						"type": "DatasetReference"
+					},
+					"name": "sinkTable",
+					"description": "Add sink data",
+					"rejectedDataLinkedService": {
+						"referenceName": "ls_adls_conn",
+						"type": "LinkedServiceReference"
+					}
+				}
+			],
 			"transformations": [
 				{
 					"name": "FullName"
+				},
+				{
+					"name": "cast1"
+				},
+				{
+					"name": "filterYear"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "AlterRow1"
 				}
 			],
 			"scriptLines": [
@@ -39,8 +64,56 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> readcsv",
-				"readcsv derive(FullName = {First Name}+' '+{Last Name},",
-				"          column2 = ERROR_FUNCTION('')) ~> FullName"
+				"readcsv derive(FullName = {First Name}+' '+{Last Name}) ~> FullName",
+				"FullName cast(output(",
+				"          {Subscription Date} as date 'yyyy-MM-dd'",
+				"     ),",
+				"     errors: true) ~> cast1",
+				"cast1 filter(year({Subscription Date})==2022) ~> filterYear",
+				"filterYear select(mapColumn(",
+				"          Id = Index,",
+				"          CustomerId = {Customer Id},",
+				"          FirstName = {First Name},",
+				"          LastName = {Last Name},",
+				"          Company,",
+				"          City,",
+				"          Country,",
+				"          Phone1 = {Phone 1},",
+				"          Phone2 = {Phone 2},",
+				"          Email,",
+				"          SubscriptionDate = {Subscription Date},",
+				"          Website,",
+				"          FullName",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 alterRow(insertIf(isNull(Id)),",
+				"     updateIf(not(isNull(Id)))) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:true,",
+				"     keys:['Id'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          Id,",
+				"          CustomerId,",
+				"          FirstName,",
+				"          LastName,",
+				"          Company,",
+				"          City,",
+				"          Country,",
+				"          Phone1,",
+				"          Phone2,",
+				"          Email,",
+				"          SubscriptionDate,",
+				"          Website,",
+				"          FullName",
+				"     )) ~> sinkTable"
 			]
 		}
 	}
